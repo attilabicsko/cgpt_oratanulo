@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tanuljuk meg az órát!</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+  background: #f1f5ff;
+  color: #26334a;
+  text-align: center;
+}
+
+.app {
+  max-width: 720px;
+  margin: auto;
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 30px #25365c18;
+}
+
+h1 { color: #354e91; margin-top: 5px; }
+h2 { color: #354e91; }
+
+.controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+button, select, input {
+  padding: 12px 16px;
+  border: 2px solid #d5def5;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: #496bd0;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+
+button:active { transform: scale(.97); }
+button.secondary { background: #7384a9; }
+
+.config {
+  max-width: 400px;
+  margin: 25px auto;
+  text-align: left;
+}
+
+.config-group {
+  margin: 20px 0;
+}
+
+.config-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #354e91;
+}
+
+.config-group select,
+.config-group input {
+  width: 100%;
+  background: white;
+}
+
+.config-hint {
+  color: #8490a5;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.start-button {
+  width: 100%;
+  padding: 16px;
+  font-size: 19px;
+  margin-top: 12px;
+}
+
+/* ÓRA ÉS TEKERŐ ELRENDEZÉSE */
+
+.clock-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 25px auto;
+}
+
+.clock {
+  width: min(68vw, 360px);
+  height: min(68vw, 360px);
+  flex-shrink: 0;
+  position: relative;
+  border: 9px solid #354e91;
+  border-radius: 50%;
+  background: #fffdf5;
+  box-shadow: 0 5px 15px #25365c25;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.clock * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.number {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  margin: -18px;
+  font-size: 23px;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #354e91;
+  pointer-events: none;
+}
+
+.hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: 50% 100%;
+  border-radius: 10px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.hand::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -15px;
+  width: 38px;
+  height: calc(100% + 30px);
+  transform: translateX(-50%);
+  border-radius: 20px;
+  background: transparent;
+}
+
+.hand:active { cursor: grabbing; }
+
+.hour {
+  width: 10px;
+  height: 25%;
+  margin-left: -5px;
+  background: #293b6b;
+  z-index: 3;
+}
+
+.minute {
+  width: 5px;
+  height: 36%;
+  margin-left: -2.5px;
+  background: #e65b56;
+  z-index: 4;
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 17px;
+  height: 17px;
+  margin: -8.5px;
+  border-radius: 50%;
+  background: #263c78;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* VALÓDI ÓRAKORONÁRA EMLÉKEZTETŐ TEKERŐ */
+
+.knob-area {
+  width: 76px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.knob {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  position: relative;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      #777 0deg 3deg,
+      #c5c5c5 3deg 6deg
+    );
+
+  border: 3px solid #555;
+
+  box-shadow:
+    inset 0 3px 6px #ffffff80,
+    inset 0 -5px 8px #33333380,
+    0 3px 7px #00000030;
+
+  transition: box-shadow .1s;
+}
+
+.knob::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #e4e4e4,
+      #a5a5a5 45%,
+      #686868 85%,
+      #454545
+    );
+
+  border: 1px solid #555;
+
+  box-shadow:
+    inset 0 2px 4px #ffffff90,
+    inset 0 -3px 5px #33333360;
+}
+
+.knob::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #454545;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 2px #ffffff80;
+}
+
+.knob:active {
+  box-shadow:
+    inset 0 4px 9px #00000050,
+    0 1px 3px #00000030;
+  cursor: grabbing;
+}
+
+/* FELÜLET */
+
+.task {
+  font-size: 23px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: #354e91;
+}
+
+.feedback {
+  min-height: 35px;
+  font-size: 19px;
+  font-weight: bold;
+  margin: 14px;
+}
+
+.score {
+  margin-top: 20px;
+  color: #65718a;
+  font-weight: bold;
+}
+
+.progress {
+  background: #e9eefb;
+  height: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #496bd0;
+  width: 0%;
+  transition: width .3s;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #7384a9;
+  font-weight: bold;
+}
+
+.result-number {
+  font-size: 48px;
+  font-weight: bold;
+  color: #354e91;
+  margin: 15px;
+}
+
+.hidden { display: none !important; }
+
+.feedback.good { color: #15945d; }
+.feedback.bad { color: #dc5555; }
+
+.hint {
+  color: #7b8499;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+@media(max-width: 450px) {
+  body { padding: 10px; }
+  .app { padding: 14px; }
+  h1 { font-size: 24px; }
+  .task { font-size: 19px; }
+
+  .clock-area { gap: 8px; }
+
+  .clock {
+    width: min(67vw, 300px);
+    height: min(67vw, 300px);
+  }
+
+  .knob-area {
+    width: 58px;
+  }
+
+  .knob {
+    width: 52px;
+    height: 52px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>🕒 Tanuljuk meg az órát!</h1>
+
+<!-- BEÁLLÍTÁSOK -->
+
+<div id="setupScreen">
+
+<h2>🎯 Új gyakorlás</h2>
+
+<div class="config">
+
+  <div class="config-group">
+    <label for="difficulty">Nehézségi szint</label>
+
+    <select id="difficulty">
+      <option value="0">1. szint – Egész órák</option>
+      <option value="1">2. szint – Félórák</option>
+      <option value="2">3. szint – Negyedórák</option>
+      <option value="3" selected>4. szint – Ötperces pontosság</option>
+      <option value="4">5. szint – Egyperces pontosság</option>
+    </select>
+
+    <div class="config-hint">
+      A magasabb szint egyre pontosabb időbeállítást igényel.
+    </div>
+  </div>
+
+  <div class="config-group">
+    <label for="taskCount">Feladatok száma</label>
+
+    <input type="number" id="taskCount" min="1" max="100" value="10">
+
+    <div class="config-hint">
+      Hány feladat legyen egy gyakorlás során?
+    </div>
+  </div>
+
+  <div class="config-group">
+    <label for="startMode">Gyakorlási mód</label>
+
+    <select id="startMode">
+      <option value="set">Állítsd be az órát!</option>
+      <option value="read">Mennyi az idő?</option>
+    </select>
+  </div>
+
+  <div class="config-group">
+    <label for="startNumbers">Óra számozása</label>
+
+    <select id="startNumbers">
+      <option value="arab">Arab számok</option>
+      <option value="roman">Római számok</option>
+    </select>
+  </div>
+
+  <button class="start-button" onclick="startSession()">
+    🚀 Gyakorlás indítása
+  </button>
+
+</div>
+</div>
+
+
+<!-- GYAKORLÓ KÉPERNYŐ -->
+
+<div id="gameScreen" class="hidden">
+
+  <div class="controls">
+    <select id="numbers">
+      <option value="arab">Arab számok</option>
+      <option value="roman">Római számok</option>
+    </select>
+  </div>
+
+  <div class="progress-text" id="progressText"></div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="task" id="task"></div>
+
+  <div class="clock-area">
+
+    <div class="clock" id="clock">
+      <div id="numbersLayer"></div>
+      <div class="hand hour" id="hourHand"></div>
+      <div class="hand minute" id="minuteHand"></div>
+      <div class="center"></div>
+    </div>
+
+    <!-- AZ EGYETLEN TEKERŐGOMB -->
+
+    <div class="knob-area" id="knobArea">
+      <div
+        class="knob"
+        id="knob"
+        role="slider"
+        aria-label="Óra tekerőgomb"
+        tabindex="0"
+      ></div>
+    </div>
+
+  </div>
+
+  <div id="setControls">
+    <button onclick="checkAnswer()">Ellenőrzés ✓</button>
+  </div>
+
+  <div id="readControls" class="hidden">
+
+    <div class="controls">
+      <input id="answerHour" type="number" min="1" max="12" placeholder="Óra">
+
+      <span style="font-size:25px">:</span>
+
+      <input id="answerMinute" type="number" min="0" max="59" placeholder="Perc">
+    </div>
+
+    <button onclick="checkAnswer()">Ellenőrzés ✓</button>
+
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="score">
+    ⭐ Helyes válaszok: <span id="score">0</span>
+  </div>
+
+  <p class="hint">
+    🔵 Kék: óramutató · 🔴 Piros: percmutató
+    <br>
+    Húzd a mutatókat vagy tekerd a gombot!
+  </p>
+
+  <div class="controls">
+    <button class="secondary" onclick="backToSetup()">Kilépés</button>
+  </div>
+
+</div>
+
+
+<!-- EREDMÉNYEK -->
+
+<div id="resultScreen" class="hidden">
+
+  <h2>🎉 Gyakorlás befejezve!</h2>
+
+  <div class="result-number" id="resultPercent">100%</div>
+
+  <p id="resultText"></p>
+
+  <p>Helyes válaszok: <strong id="resultCorrect"></strong></p>
+
+  <p>Hibás válaszok: <strong id="resultWrong"></strong></p>
+
+  <p id="resultStars" style="font-size:30px"></p>
+
+  <button class="start-button" onclick="backToSetup()">
+    Új gyakorlás
+  </button>
+
+</div>
+
+</div>
+
+
+<script>
+
+// ==========================================
+// ALAPVÁLTOZÓK
+// ==========================================
+
+const roman = [
+  "XII", "I", "II", "III", "IV", "V",
+  "VI", "VII", "VIII", "IX", "X", "XI"
+];
+
+const difficultySteps = [60, 30, 15, 5, 1];
+
+let targetHour = 3;
+let targetMinute = 30;
+
+let score = 0;
+let wrong = 0;
+
+let totalTasks = 10;
+let completedTasks = 0;
+
+let currentMode = "set";
+let difficulty = 3;
+
+let totalMinutes = 0;
+let answered = false;
+let lastGeneratedTime = null;
+
+// Mutató húzása
+let dragging = null;
+let previousAngle = null;
+let dragRawMinutes = 0;
+
+// Tekerőgomb állapota
+let knobDragging = false;
+let knobLastY = 0;
+let knobAccumulator = 0;
+let knobRotation = 0;
+
+// Egy lépéshez szükséges függőleges mozgás pixelben
+const KNOB_PIXELS_PER_STEP = 9;
+
+const clock = document.getElementById("clock");
+const hourHand = document.getElementById("hourHand");
+const minuteHand = document.getElementById("minuteHand");
+const knob = document.getElementById("knob");
+
+
+// ==========================================
+// SEGÉDFÜGGVÉNYEK
+// ==========================================
+
+function getStep() {
+  return difficultySteps[difficulty];
+}
+
+function normalizeTime(value) {
+  return ((value % 720) + 720) % 720;
+}
+
+function snapTime(value) {
+  const step = getStep();
+  return normalizeTime(Math.round(value / step) * step);
+}
+
+
+// ==========================================
+// KÉPERNYŐVÁLTÁS
+// ==========================================
+
+function showScreen(screen) {
+
+  document.getElementById("setupScreen").classList.add("hidden");
+  document.getElementById("gameScreen").classList.add("hidden");
+  document.getElementById("resultScreen").classList.add("hidden");
+
+  document.getElementById(screen).classList.remove("hidden");
+}
+
+
+// ==========================================
+// GYAKORLÁS INDÍTÁSA
+// ==========================================
+
+function startSession() {
+
+  difficulty = Number(
+    document.getElementById("difficulty").value
+  );
+
+  totalTasks = Number(
+    document.getElementById("taskCount").value
+  );
+
+  if (
+    !Number.isInteger(totalTasks) ||
+    totalTasks < 1 ||
+    totalTasks > 100
+  ) {
+    alert("A feladatok száma 1 és 100 között lehet!");
+    return;
+  }
+
+  currentMode = document.getElementById("startMode").value;
+
+  document.getElementById("numbers").value =
+    document.getElementById("startNumbers").value;
+
+  score = 0;
+  wrong = 0;
+  completedTasks = 0;
+  answered = false;
+  lastGeneratedTime = null;
+
+  resetKnob();
+
+  document.getElementById("score").textContent = "0";
+
+  document.getElementById("setControls")
+    .classList.toggle("hidden", currentMode !== "set");
+
+  document.getElementById("readControls")
+    .classList.toggle("hidden", currentMode !== "read");
+
+  document.getElementById("knobArea")
+    .classList.toggle("hidden", currentMode !== "set");
+
+  showScreen("gameScreen");
+
+  requestAnimationFrame(() => {
+    drawNumbers();
+    newTask();
+  });
+}
+
+
+// ==========================================
+// SZÁMLAP KIRAJZOLÁSA
+// ==========================================
+
+function drawNumbers() {
+
+  const layer = document.getElementById("numbersLayer");
+
+  layer.innerHTML = "";
+
+  const size = clock.clientWidth;
+  const radius = size * 0.39;
+  const center = size / 2;
+
+  const useRoman =
+    document.getElementById("numbers").value === "roman";
+
+  for (let i = 1; i <= 12; i++) {
+
+    const angle = i * 30 * Math.PI / 180 - Math.PI / 2;
+
+    const number = document.createElement("div");
+
+    number.className = "number";
+    number.textContent = useRoman ? roman[i % 12] : i;
+
+    number.style.left =
+      (center + radius * Math.cos(angle)) + "px";
+
+    number.style.top =
+      (center + radius * Math.sin(angle)) + "px";
+
+    layer.appendChild(number);
+  }
+}
+
+
+// ==========================================
+// MUTATÓK
+// ==========================================
+
+function drawHands() {
+
+  const minutes = totalMinutes;
+
+  hourHand.style.transform =
+    `rotate(${minutes * 0.5}deg)`;
+
+  minuteHand.style.transform =
+    `rotate(${minutes * 6}deg)`;
+}
+
+
+function setTime(hour, minute) {
+
+  totalMinutes = normalizeTime(
+    ((hour % 12) * 60) + minute
+  );
+
+  drawHands();
+}
+
+
+// ==========================================
+// TEKERŐGOMB
+// ==========================================
+
+function resetKnob() {
+
+  knobDragging = false;
+  knobAccumulator = 0;
+  knobRotation = 0;
+
+  knob.style.transform = "rotate(0deg)";
+}
+
+
+function turnKnob(direction) {
+
+  if (currentMode !== "set" || answered) return;
+
+  const step = getStep();
+
+  // Egyetlen tekerési lépés az aktuális nehézségi szintnek megfelelő.
+  totalMinutes = normalizeTime(
+    totalMinutes + direction * step
+  );
+
+  // A gomb vizuálisan is forog.
+  // Nincs szögkorlát, tehát akárhányszor körbefordulhat.
+  knobRotation += direction * 36;
+
+  knob.style.transform =
+    `rotate(${knobRotation}deg)`;
+
+  drawHands();
+}
+
+
+// Tekerőgomb megfogása
+
+knob.addEventListener("pointerdown", event => {
+
+  if (currentMode !== "set" || answered) return;
+
+  knobDragging = true;
+  knobLastY = event.clientY;
+  knobAccumulator = 0;
+
+  knob.setPointerCapture(event.pointerId);
+
+  event.preventDefault();
+});
+
+
+// Fel-le húzás feldolgozása
+
+knob.addEventListener("pointermove", event => {
+
+  if (!knobDragging) return;
+
+  event.preventDefault();
+
+  const deltaY = knobLastY - event.clientY;
+
+  knobLastY = event.clientY;
+
+  knobAccumulator += deltaY;
+
+  // A mozgást több lépésre is feldolgozzuk,
+  // így a gyors tekerés sem veszít lépéseket.
+
+  while (knobAccumulator >= KNOB_PIXELS_PER_STEP) {
+
+    turnKnob(1);
+
+    knobAccumulator -= KNOB_PIXELS_PER_STEP;
+  }
+
+  while (knobAccumulator <= -KNOB_PIXELS_PER_STEP) {
+
+    turnKnob(-1);
+
+    knobAccumulator += KNOB_PIXELS_PER_STEP;
+  }
+});
+
+
+function stopKnobDragging() {
+
+  knobDragging = false;
+  knobAccumulator = 0;
+}
+
+knob.addEventListener("pointerup", stopKnobDragging);
+knob.addEventListener("pointercancel", stopKnobDragging);
+
+
+// Billentyűzetes hozzáférés: fel/le nyíllal is tekerhető.
+
+knob.addEventListener("keydown", event => {
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    turnKnob(1);
+  }
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    turnKnob(-1);
+  }
+});
+
+
+// ==========================================
+// VÉLETLENSZERŰ FELADATOK
+// ==========================================
+
+function generateTime() {
+
+  const step = getStep();
+
+  const possibleMinutes = [];
+
+  for (let m = 0; m < 60; m += step) {
+    possibleMinutes.push(m);
+  }
+
+  let candidate;
+  let attempts = 0;
+
+  do {
+
+    targetHour = Math.floor(Math.random() * 12) + 1;
+
+    targetMinute =
+      possibleMinutes[
+        Math.floor(Math.random() * possibleMinutes.length)
+      ];
+
+    candidate = targetHour * 60 + targetMinute;
+
+    attempts++;
+
+  } while (
+    candidate === lastGeneratedTime &&
+    attempts < 100
+  );
+
+  lastGeneratedTime = candidate;
+}
+
+
+// ==========================================
+// ÚJ FELADAT
+// ==========================================
+
+function newTask() {
+
+  if (completedTasks >= totalTasks) {
+    finishSession();
+    return;
+  }
+
+  answered = false;
+
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className = "feedback";
+
+  resetKnob();
+
+  generateTime();
+
+  if (currentMode === "set") {
+
+    setTime(12, 0);
+
+    document.getElementById("task").textContent =
+      `Állítsd be az órát: ${targetHour}:` +
+      `${String(targetMinute).padStart(2, "0")}!`;
+
+  } else {
+
+    setTime(targetHour, targetMinute);
+
+    document.getElementById("task").textContent =
+      "Hány óra van? Írd be a választ!";
+
+    document.getElementById("answerHour").value = "";
+    document.getElementById("answerMinute").value = "";
+  }
+
+  updateProgress();
+}
+
+
+// ==========================================
+// HALADÁS
+// ==========================================
+
+function updateProgress() {
+
+  document.getElementById("progressText").textContent =
+    `Feladat ${completedTasks + 1} / ${totalTasks}`;
+
+  document.getElementById("progressBar").style.width =
+    `${completedTasks / totalTasks * 100}%`;
+}
+
+
+// ==========================================
+// VÁLASZ ELLENŐRZÉSE
+// ==========================================
+
+function checkAnswer() {
+
+  if (answered) return;
+
+  let correct = false;
+
+  if (currentMode === "set") {
+
+    const expected =
+      normalizeTime((targetHour % 12) * 60 + targetMinute);
+
+    correct = totalMinutes === expected;
+
+  } else {
+
+    const hourInput =
+      document.getElementById("answerHour").value;
+
+    const minuteInput =
+      document.getElementById("answerMinute").value;
+
+    if (hourInput === "" || minuteInput === "") {
+
+      const feedback = document.getElementById("feedback");
+
+      feedback.textContent = "Kérlek, töltsd ki mindkét mezőt!";
+      feedback.className = "feedback bad";
+
+      return;
+    }
+
+    correct =
+      Number(hourInput) === targetHour &&
+      Number(minuteInput) === targetMinute;
+  }
+
+  const feedback = document.getElementById("feedback");
+
+  if (correct) {
+
+    score++;
+
+    document.getElementById("score").textContent = score;
+
+    feedback.textContent = "🎉 Szuper! Helyes válasz!";
+    feedback.className = "feedback good";
+
+    answered = true;
+    completedTasks++;
+
+    setTimeout(newTask, 1100);
+
+  } else {
+
+    wrong++;
+
+    feedback.textContent = "Próbáld újra! 😊";
+    feedback.className = "feedback bad";
+  }
+}
+
+
+// ==========================================
+// MUNKAMENET VÉGE
+// ==========================================
+
+function finishSession() {
+
+  showScreen("resultScreen");
+
+  const percentage =
+    Math.round(score / totalTasks * 100);
+
+  document.getElementById("resultPercent").textContent =
+    percentage + "%";
+
+  document.getElementById("resultCorrect").textContent =
+    score + " / " + totalTasks;
+
+  document.getElementById("resultWrong").textContent =
+    wrong;
+
+  let stars = "";
+
+  if (percentage >= 90) stars = "⭐⭐⭐";
+  else if (percentage >= 70) stars = "⭐⭐";
+  else if (percentage >= 50) stars = "⭐";
+  else stars = "💪";
+
+  document.getElementById("resultStars").textContent = stars;
+
+  let message = "";
+
+  if (percentage === 100) {
+    message = "Tökéletes! Minden feladat sikerült! 🏆";
+  } else if (percentage >= 80) {
+    message = "Nagyszerű munka! Ügyes vagy!";
+  } else if (percentage >= 50) {
+    message = "Szép munka! Egy kis gyakorlással még jobb lesz!";
+  } else {
+    message = "Ne csüggedj! Gyakoroljunk még egy kicsit!";
+  }
+
+  document.getElementById("resultText").textContent = message;
+}
+
+
+// ==========================================
+// VISSZA A BEÁLLÍTÁSOKHOZ
+// ==========================================
+
+function backToSetup() {
+
+  dragging = null;
+  knobDragging = false;
+
+  showScreen("setupScreen");
+}
+
+
+// ==========================================
+// SZÁMOZÁS VÁLTÁSA
+// ==========================================
+
+document.getElementById("numbers").addEventListener(
+  "change",
+  drawNumbers
+);
+
+
+// ==========================================
+// KÖZVETLEN MUTATÓHÚZÁS
+// ==========================================
+
+function getAngle(event) {
+
+  const rect = clock.getBoundingClientRect();
+
+  const x =
+    event.clientX - rect.left - rect.width / 2;
+
+  const y =
+    event.clientY - rect.top - rect.height / 2;
+
+  return (
+    Math.atan2(x, -y) * 180 / Math.PI + 360
+  ) % 360;
+}
+
+
+function angleDifference(current, previous) {
+
+  let difference = current - previous;
+
+  if (difference > 180) difference -= 360;
+
+  if (difference < -180) difference += 360;
+
+  return difference;
+}
+
+
+clock.addEventListener("pointerdown", event => {
+
+  if (
+    event.target !== hourHand &&
+    event.target !== minuteHand
+  ) {
+    return;
+  }
+
+  if (currentMode !== "set" || answered) return;
+
+  dragging =
+    event.target === minuteHand ? "minute" : "hour";
+
+  previousAngle = getAngle(event);
+
+  dragRawMinutes = totalMinutes;
+
+  clock.setPointerCapture(event.pointerId);
+
+  event.preventDefault();
+});
+
+
+clock.addEventListener("pointermove", event => {
+
+  if (!dragging) return;
+
+  event.preventDefault();
+
+  const currentAngle = getAngle(event);
+
+  const difference =
+    angleDifference(currentAngle, previousAngle);
+
+  previousAngle = currentAngle;
+
+  if (dragging === "minute") {
+
+    dragRawMinutes += difference / 6;
+
+  } else {
+
+    dragRawMinutes += difference * 2;
+  }
+
+  totalMinutes = snapTime(dragRawMinutes);
+
+  drawHands();
+});
+
+
+function stopDragging() {
+
+  dragging = null;
+  previousAngle = null;
+}
+
+clock.addEventListener("pointerup", stopDragging);
+clock.addEventListener("pointercancel", stopDragging);
+
+
+// ==========================================
+// ÁTMÉRETEZÉS
+// ==========================================
+
+window.addEventListener("resize", () => {
+
+  if (
+    !document.getElementById("gameScreen")
+      .classList.contains("hidden")
+  ) {
+    drawNumbers();
+  }
+});
+
+</script>
+
+</body>
+</html>
