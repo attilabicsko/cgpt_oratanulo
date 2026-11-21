@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -6,9 +7,7 @@
 <title>Tanuljuk meg az órát!</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -64,9 +63,7 @@ button.secondary { background: #7384a9; }
   text-align: left;
 }
 
-.config-group {
-  margin: 20px 0;
-}
+.config-group { margin: 20px 0; }
 
 .config-group label {
   display: block;
@@ -94,7 +91,7 @@ button.secondary { background: #7384a9; }
   margin-top: 12px;
 }
 
-/* ÓRA ÉS TEKERŐ ELRENDEZÉSE */
+/* ÓRA */
 
 .clock-area {
   display: flex;
@@ -191,7 +188,7 @@ button.secondary { background: #7384a9; }
   pointer-events: none;
 }
 
-/* VALÓDI ÓRAKORONÁRA EMLÉKEZTETŐ TEKERŐ */
+/* TEKERŐGOMB */
 
 .knob-area {
   width: 76px;
@@ -225,8 +222,6 @@ button.secondary { background: #7384a9; }
     inset 0 3px 6px #ffffff80,
     inset 0 -5px 8px #33333380,
     0 3px 7px #00000030;
-
-  transition: box-shadow .1s;
 }
 
 .knob::before {
@@ -261,7 +256,6 @@ button.secondary { background: #7384a9; }
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 1px 2px #ffffff80;
 }
 
 .knob:active {
@@ -269,6 +263,37 @@ button.secondary { background: #7384a9; }
     inset 0 4px 9px #00000050,
     0 1px 3px #00000030;
   cursor: grabbing;
+}
+
+/* DÉLELŐTT / DÉLUTÁN */
+
+.period-controls {
+  margin: 12px auto 18px;
+  max-width: 350px;
+}
+
+.period-controls label {
+  display: block;
+  font-weight: bold;
+  color: #354e91;
+  margin-bottom: 8px;
+}
+
+.period-controls select {
+  width: 100%;
+  background: white;
+  font-weight: bold;
+}
+
+.period-indicator {
+  display: inline-block;
+  padding: 9px 20px;
+  border-radius: 12px;
+  background: #fff4d9;
+  color: #8b641b;
+  font-size: 17px;
+  font-weight: bold;
+  margin: 8px auto 12px;
 }
 
 /* FELÜLET */
@@ -337,7 +362,6 @@ button.secondary { background: #7384a9; }
   .app { padding: 14px; }
   h1 { font-size: 24px; }
   .task { font-size: 19px; }
-
   .clock-area { gap: 8px; }
 
   .clock {
@@ -345,9 +369,7 @@ button.secondary { background: #7384a9; }
     height: min(67vw, 300px);
   }
 
-  .knob-area {
-    width: 58px;
-  }
+  .knob-area { width: 58px; }
 
   .knob {
     width: 52px;
@@ -423,16 +445,9 @@ button.secondary { background: #7384a9; }
 </div>
 
 
-<!-- GYAKORLÓ KÉPERNYŐ -->
+<!-- GYAKORLÁS -->
 
 <div id="gameScreen" class="hidden">
-
-  <div class="controls">
-    <select id="numbers">
-      <option value="arab">Arab számok</option>
-      <option value="roman">Római számok</option>
-    </select>
-  </div>
 
   <div class="progress-text" id="progressText"></div>
 
@@ -441,6 +456,21 @@ button.secondary { background: #7384a9; }
   </div>
 
   <div class="task" id="task"></div>
+
+  <!-- DÉLELŐTT / DÉLUTÁN BEÁLLÍTÁS -->
+
+  <div id="setPeriodControls" class="period-controls hidden">
+    <label for="periodSelect">Mikor van?</label>
+
+    <select id="periodSelect">
+      <option value="0">🌙 Éjszaka / Délelőtt (00–11)</option>
+      <option value="12">☀️ Délután / Este (12–23)</option>
+    </select>
+  </div>
+
+  <!-- LEOLVASÁSI MÓD IDŐSZAKJELZÉSE -->
+
+  <div id="readPeriod" class="period-indicator hidden"></div>
 
   <div class="clock-area">
 
@@ -451,16 +481,12 @@ button.secondary { background: #7384a9; }
       <div class="center"></div>
     </div>
 
-    <!-- AZ EGYETLEN TEKERŐGOMB -->
-
     <div class="knob-area" id="knobArea">
-      <div
-        class="knob"
-        id="knob"
+      <div class="knob" id="knob"
         role="slider"
         aria-label="Óra tekerőgomb"
-        tabindex="0"
-      ></div>
+        tabindex="0">
+      </div>
     </div>
 
   </div>
@@ -471,12 +497,28 @@ button.secondary { background: #7384a9; }
 
   <div id="readControls" class="hidden">
 
+    <p class="hint">
+      Írd be az időt 24 órás formátumban!
+    </p>
+
     <div class="controls">
-      <input id="answerHour" type="number" min="1" max="12" placeholder="Óra">
+      <input
+        id="answerHour"
+        type="number"
+        min="0"
+        max="23"
+        placeholder="Óra (00–23)"
+      >
 
       <span style="font-size:25px">:</span>
 
-      <input id="answerMinute" type="number" min="0" max="59" placeholder="Perc">
+      <input
+        id="answerMinute"
+        type="number"
+        min="0"
+        max="59"
+        placeholder="Perc"
+      >
     </div>
 
     <button onclick="checkAnswer()">Ellenőrzés ✓</button>
@@ -552,22 +594,27 @@ let completedTasks = 0;
 let currentMode = "set";
 let difficulty = 3;
 
+// 0–1439: teljes 24 órás nap percben.
+// 0 = 00:00, 720 = 12:00, 1140 = 19:00.
+
 let totalMinutes = 0;
+
 let answered = false;
 let lastGeneratedTime = null;
 
-// Mutató húzása
+// Mutatóhúzás
+
 let dragging = null;
 let previousAngle = null;
 let dragRawMinutes = 0;
 
-// Tekerőgomb állapota
+// Tekerőgomb
+
 let knobDragging = false;
 let knobLastY = 0;
 let knobAccumulator = 0;
 let knobRotation = 0;
 
-// Egy lépéshez szükséges függőleges mozgás pixelben
 const KNOB_PIXELS_PER_STEP = 9;
 
 const clock = document.getElementById("clock");
@@ -585,12 +632,28 @@ function getStep() {
 }
 
 function normalizeTime(value) {
-  return ((value % 720) + 720) % 720;
+  return ((value % 1440) + 1440) % 1440;
 }
 
 function snapTime(value) {
   const step = getStep();
   return normalizeTime(Math.round(value / step) * step);
+}
+
+function getCurrentHour24() {
+  return Math.floor(totalMinutes / 60) % 24;
+}
+
+function getCurrentMinute() {
+  return totalMinutes % 60;
+}
+
+function getCurrentDialHour() {
+  return Math.floor((totalMinutes % 720) / 60) + 1;
+}
+
+function getCurrentPeriod() {
+  return totalMinutes >= 720 ? 12 : 0;
 }
 
 
@@ -633,9 +696,6 @@ function startSession() {
 
   currentMode = document.getElementById("startMode").value;
 
-  document.getElementById("numbers").value =
-    document.getElementById("startNumbers").value;
-
   score = 0;
   wrong = 0;
   completedTasks = 0;
@@ -652,13 +712,22 @@ function startSession() {
   document.getElementById("readControls")
     .classList.toggle("hidden", currentMode !== "read");
 
+  document.getElementById("setPeriodControls")
+    .classList.toggle("hidden", currentMode !== "set");
+
+  document.getElementById("readPeriod")
+    .classList.toggle("hidden", currentMode !== "read");
+
   document.getElementById("knobArea")
     .classList.toggle("hidden", currentMode !== "set");
 
   showScreen("gameScreen");
 
   requestAnimationFrame(() => {
+
+    // A számlap típusát csak a kezdőképernyőről vesszük át.
     drawNumbers();
+
     newTask();
   });
 }
@@ -679,7 +748,7 @@ function drawNumbers() {
   const center = size / 2;
 
   const useRoman =
-    document.getElementById("numbers").value === "roman";
+    document.getElementById("startNumbers").value === "roman";
 
   for (let i = 1; i <= 12; i++) {
 
@@ -702,29 +771,83 @@ function drawNumbers() {
 
 
 // ==========================================
-// MUTATÓK
+// MUTATÓK KIRAJZOLÁSA
 // ==========================================
 
 function drawHands() {
 
-  const minutes = totalMinutes;
+  // A számlap 12 órás, az idő viszont 24 órás.
+  const dialMinutes = totalMinutes % 720;
 
   hourHand.style.transform =
-    `rotate(${minutes * 0.5}deg)`;
+    `rotate(${dialMinutes * 0.5}deg)`;
 
   minuteHand.style.transform =
-    `rotate(${minutes * 6}deg)`;
+    `rotate(${dialMinutes * 6}deg)`;
+
+  updatePeriodUI();
 }
 
 
 function setTime(hour, minute) {
 
-  totalMinutes = normalizeTime(
-    ((hour % 12) * 60) + minute
-  );
+  totalMinutes = normalizeTime(hour * 60 + minute);
 
   drawHands();
 }
+
+
+// ==========================================
+// DÉLELŐTT / DÉLUTÁN
+// ==========================================
+
+function updatePeriodUI() {
+
+  const period = getCurrentPeriod();
+
+  const periodSelect =
+    document.getElementById("periodSelect");
+
+  if (periodSelect) {
+    periodSelect.value = String(period);
+  }
+
+  const indicator =
+    document.getElementById("readPeriod");
+
+  if (indicator) {
+
+    if (period === 0) {
+      indicator.textContent = "🌙 ÉJSZAKA / DÉLELŐTT";
+      indicator.style.background = "#fff4d9";
+      indicator.style.color = "#8b641b";
+    } else {
+      indicator.textContent = "☀️ DÉLUTÁN / ESTE";
+      indicator.style.background = "#fff0dc";
+      indicator.style.color = "#b66b26";
+    }
+  }
+}
+
+
+// A feladatbeállításnál a napszak külön választható.
+// A számlapon látható időt megtartjuk.
+
+document.getElementById("periodSelect")
+  .addEventListener("change", event => {
+
+    if (currentMode !== "set" || answered) return;
+
+    const period = Number(event.target.value);
+    const dialHour = getCurrentDialHour() % 12;
+    const minute = getCurrentMinute();
+
+    totalMinutes = normalizeTime(
+      (period + dialHour) * 60 + minute
+    );
+
+    drawHands();
+  });
 
 
 // ==========================================
@@ -747,13 +870,13 @@ function turnKnob(direction) {
 
   const step = getStep();
 
-  // Egyetlen tekerési lépés az aktuális nehézségi szintnek megfelelő.
+  // A teljes 24 órás időt módosítjuk.
+  // A napszak automatikusan vált, ha átlépjük a 12 órát.
+
   totalMinutes = normalizeTime(
     totalMinutes + direction * step
   );
 
-  // A gomb vizuálisan is forog.
-  // Nincs szögkorlát, tehát akárhányszor körbefordulhat.
   knobRotation += direction * 36;
 
   knob.style.transform =
@@ -762,8 +885,6 @@ function turnKnob(direction) {
   drawHands();
 }
 
-
-// Tekerőgomb megfogása
 
 knob.addEventListener("pointerdown", event => {
 
@@ -779,8 +900,6 @@ knob.addEventListener("pointerdown", event => {
 });
 
 
-// Fel-le húzás feldolgozása
-
 knob.addEventListener("pointermove", event => {
 
   if (!knobDragging) return;
@@ -793,20 +912,15 @@ knob.addEventListener("pointermove", event => {
 
   knobAccumulator += deltaY;
 
-  // A mozgást több lépésre is feldolgozzuk,
-  // így a gyors tekerés sem veszít lépéseket.
-
   while (knobAccumulator >= KNOB_PIXELS_PER_STEP) {
 
     turnKnob(1);
-
     knobAccumulator -= KNOB_PIXELS_PER_STEP;
   }
 
   while (knobAccumulator <= -KNOB_PIXELS_PER_STEP) {
 
     turnKnob(-1);
-
     knobAccumulator += KNOB_PIXELS_PER_STEP;
   }
 });
@@ -820,9 +934,6 @@ function stopKnobDragging() {
 
 knob.addEventListener("pointerup", stopKnobDragging);
 knob.addEventListener("pointercancel", stopKnobDragging);
-
-
-// Billentyűzetes hozzáférés: fel/le nyíllal is tekerhető.
 
 knob.addEventListener("keydown", event => {
 
@@ -839,7 +950,7 @@ knob.addEventListener("keydown", event => {
 
 
 // ==========================================
-// VÉLETLENSZERŰ FELADATOK
+// VÉLETLENSZERŰ FELADATGENERÁLÁS
 // ==========================================
 
 function generateTime() {
@@ -848,7 +959,7 @@ function generateTime() {
 
   const possibleMinutes = [];
 
-  for (let m = 0; m < 60; m += step) {
+  for (let m = 0; m < 1440; m += step) {
     possibleMinutes.push(m);
   }
 
@@ -857,14 +968,10 @@ function generateTime() {
 
   do {
 
-    targetHour = Math.floor(Math.random() * 12) + 1;
-
-    targetMinute =
+    candidate =
       possibleMinutes[
         Math.floor(Math.random() * possibleMinutes.length)
       ];
-
-    candidate = targetHour * 60 + targetMinute;
 
     attempts++;
 
@@ -874,6 +981,9 @@ function generateTime() {
   );
 
   lastGeneratedTime = candidate;
+
+  targetHour = Math.floor(candidate / 60);
+  targetMinute = candidate % 60;
 }
 
 
@@ -899,18 +1009,23 @@ function newTask() {
 
   if (currentMode === "set") {
 
-    setTime(12, 0);
+    // A megfelelő napszak kezdőállapotként beállítva.
+    // A számlapon 12 óra látható.
+
+    setTime(targetHour >= 12 ? 12 : 0, 0);
 
     document.getElementById("task").textContent =
-      `Állítsd be az órát: ${targetHour}:` +
+      `Állítsd be az órát: ${String(targetHour).padStart(2, "0")}:` +
       `${String(targetMinute).padStart(2, "0")}!`;
 
   } else {
 
+    // Az óra a 24 órás időnek megfelelő napszakot mutatja.
+
     setTime(targetHour, targetMinute);
 
     document.getElementById("task").textContent =
-      "Hány óra van? Írd be a választ!";
+      "Hány óra van? Írd be a teljes időt!";
 
     document.getElementById("answerHour").value = "";
     document.getElementById("answerMinute").value = "";
@@ -946,10 +1061,10 @@ function checkAnswer() {
 
   if (currentMode === "set") {
 
-    const expected =
-      normalizeTime((targetHour % 12) * 60 + targetMinute);
-
-    correct = totalMinutes === expected;
+    // A teljes 24 órás időt hasonlítjuk össze.
+    correct =
+      getCurrentHour24() === targetHour &&
+      getCurrentMinute() === targetMinute;
 
   } else {
 
@@ -969,9 +1084,29 @@ function checkAnswer() {
       return;
     }
 
+    const h = Number(hourInput);
+    const m = Number(minuteInput);
+
+    if (
+      !Number.isInteger(h) ||
+      !Number.isInteger(m) ||
+      h < 0 || h > 23 ||
+      m < 0 || m > 59
+    ) {
+
+      const feedback = document.getElementById("feedback");
+
+      feedback.textContent =
+        "Az óra 00–23, a perc 00–59 között lehet!";
+
+      feedback.className = "feedback bad";
+
+      return;
+    }
+
     correct =
-      Number(hourInput) === targetHour &&
-      Number(minuteInput) === targetMinute;
+      h === targetHour &&
+      m === targetMinute;
   }
 
   const feedback = document.getElementById("feedback");
@@ -1059,16 +1194,6 @@ function backToSetup() {
 
 
 // ==========================================
-// SZÁMOZÁS VÁLTÁSA
-// ==========================================
-
-document.getElementById("numbers").addEventListener(
-  "change",
-  drawNumbers
-);
-
-
-// ==========================================
 // KÖZVETLEN MUTATÓHÚZÁS
 // ==========================================
 
@@ -1093,7 +1218,6 @@ function angleDifference(current, previous) {
   let difference = current - previous;
 
   if (difference > 180) difference -= 360;
-
   if (difference < -180) difference += 360;
 
   return difference;
@@ -1138,13 +1262,13 @@ clock.addEventListener("pointermove", event => {
   previousAngle = currentAngle;
 
   if (dragging === "minute") {
-
     dragRawMinutes += difference / 6;
-
   } else {
-
     dragRawMinutes += difference * 2;
   }
+
+  // A nehézségi szint szerinti mágneses illesztés.
+  // A 24 órás ciklust is megőrzi.
 
   totalMinutes = snapTime(dragRawMinutes);
 
