@@ -463,8 +463,8 @@ button.secondary { background: #7384a9; }
     <label for="periodSelect">Mikor van?</label>
 
     <select id="periodSelect">
-      <option value="0">🌙 Éjszaka / Délelőtt (00–11)</option>
-      <option value="12">☀️ Délután / Este (12–23)</option>
+      <option value="0">🌙 Délelőtt</option>
+      <option value="12">☀️ Délután</option>
     </select>
   </div>
 
@@ -818,11 +818,11 @@ function updatePeriodUI() {
   if (indicator) {
 
     if (period === 0) {
-      indicator.textContent = "🌙 ÉJSZAKA / DÉLELŐTT";
+      indicator.textContent = "🌙 DÉLELŐTT";
       indicator.style.background = "#fff4d9";
       indicator.style.color = "#8b641b";
     } else {
-      indicator.textContent = "☀️ DÉLUTÁN / ESTE";
+      indicator.textContent = "☀️ DÉLUTÁN";
       indicator.style.background = "#fff0dc";
       indicator.style.color = "#b66b26";
     }
